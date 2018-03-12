@@ -250,7 +250,9 @@ instance ToSchema (V1 Core.PassPhrase) where
     declareNamedSchema _ = do
         pure $ NamedSchema (Just "V1PassPhrase") $ mempty
             & type_ .~ SwaggerString
-            & pattern .~ Just "abcd"
+            & format ?~ "hex|base16"
+            & minLength ?~ 64
+            & maxLength ?~ 64
 
 instance ToJSON (V1 Core.Coin) where
     toJSON (V1 c) = toJSON . Core.unsafeGetCoin $ c
@@ -392,7 +394,7 @@ instance ToSchema NewWallet where
     genericSchemaDroppingPrefix "newwal" (\(--^) props -> props
       & ("backupPhrase"     --^ "Backup phrase to restore the wallet")
       & ("spendingPassword" --^ "Optional spending password to encrypt / decrypt private keys")
-      & ("assuranceLevel"   --^ "Desired assurance level")
+      & ("assuranceLevel"   --^ "Desired assurance level based on the number of confirmations counter of each transaction.")
       & ("name"             --^ "Wallet's name")
       & ("operation"        --^ "Create a new wallet or Restore an existing one")
     )
@@ -450,7 +452,7 @@ newtype AddressValidity = AddressValidity { isValid :: Bool }
 deriveJSON Serokell.defaultOptions ''AddressValidity
 
 instance ToSchema AddressValidity where
-    declareNamedSchema = genericSchemaDroppingPrefix "is" (\_ -> Prelude.id)
+    declareNamedSchema = genericSchemaDroppingPrefix "is" (\_ -> identity)
 
 instance Arbitrary AddressValidity where
   arbitrary = AddressValidity <$> arbitrary
